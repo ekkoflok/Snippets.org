@@ -1,0 +1,346 @@
+#+TITLE: Snippets
+
+_**Code snippets in various programming languages**_
+-----------------------------------------------------
+* BASH
+** VARIOUS
+*** Convert all images in directory, deleting originals
+mogrify -format png *.svg
+
+***  Number to ASCII
+    echo "Tal som ASCII: "$(printf \\$(printf '%03o' $((RANDOM % 255))))
+**** As Function:
+chr() {
+     ["$1" -lt 256 ] || return 1
+     printf "\\$(printf '%03o' "$1")"
+     }
+*** Infinite bash loop (timed with sleep)
+    while true; do ls; sleep 2; done
+*** IF file exists 
+if [[ -f "path/to/file" ]]; then echo "true"; else echo "false"; fi
+
+*** Bash for loop
+    #!/bin/bash
+    for number in {1..10}
+    do
+    echo "$number "
+    done
+
+    //single-line version:
+    for i in {1..10}; do echo $i; done
+    for i in 2 4 6 8; do echo $i; done
+
+*** Select random word from string
+#!/bin/bash
+array[0]="file1.sdf"
+array[1]="file2.sdf"
+array[2]="file3.sdf"
+array[3]="file4.sdf"
+
+size=${#array[@]}
+index=$(($RANDOM % $size))
+echo ${array[$index]}
+
+*** Ripgrep/ grep
+**** Search files by their content:
+
+#+begin_src bash
+grep -Ril "snippet" /
+
+//R - recursive, i - ignore case, l - show filename, / - search from root dir
+
+#+end_src
+
+#+RESULTS:
+
+*** Prepend text to file
+#+BEGIN_SRC sh
+echo "text" | cat - log.txt > tmp.txt && mv tmp.txt log.txt
+#+END_SRC
+
+*** Aura - the aur helper
+*Commands*
+aura -A <package>	Install an AUR package.
+aura -Au	            Upgrade all installed AUR packages.
+aura -Akuax	        Author's favourite (upgrades, removes makedeps, shows PKGBUILD diffs, shows progress)
+aura -Ai <package>	Look up information on an AUR package.
+aura -As <regex>	    Search the AUR via a regex.
+aura -Ap <package>	Display a package's PKGBUILD.
+aura -Ad <package>	List a package's dependencies.
+
+
+*PKGBUILD Security Analysis*
+As mentioned above, the -P commands can help us detect bash usage that conflicts with the AUR guidelines, as well as outright exploits.
+
+Command	Function
+aura -P <stdin>	Analyse a PKGBUILD piped from -Ap.
+aura -Pf <file>	Analyse a PKGBUILD file.
+aura -Pd <dir>    Analyse the PKGBUILD file found in a directory.
+aura -Pa	        Analyse all locally installed AUR packages.
+
+*** Show network password
+    sudo cat /etc/NetworkManager/system-connections/TP-LINK_F50C.nmconnection | grep psk=
+
+*** Write email from terminal via thunderbird
+    tmail.sh --> script for sending mails from terminal with thunderbird. Sort of old school mail. wink
+
+    #!/bin/bash
+    USAGE="tmail usage: tmail -t TO -c CC  -s SUBJECT -b BODY -a ATTACHMENT"
+
+    while getopts "t:c:s:b:a:" options; do
+    case $options in
+    t ) TO=$OPTARG;;
+    c ) CC=$OPTARG;;
+    s ) SUBJECT=$OPTARG;;
+    b ) BODY=$OPTARG;; 
+    a ) ATTACHMENT=$OPTARG;; 
+    \? ) echo $USAGE
+    exit 1;;
+    * ) echo $USAGE
+      exit 1;;
+    esac
+    done
+
+    thunderbird -compose to=\'$TO\',cc=\'$CC\',subject=\'$SUBJECT\',body=\'$BODY\',attachment=\'file:///$ATTACHMENT\'
+
+*** Move up (cd ..) n times
+    up() { for updirs in $(seq ${1:-1}); do cd ..; done; }
+*** Backup
+    Here is my backup script. It's designed for daily use and saves the backups in a directory named after the date. It works with hardlinks, so there is a directory for every day, but not that much disk space is used.
+    #!/bin/bash
+    # Edit parameters here.
+    # Important: Don't forget the trailing slashes in SOURCES and TARGET
+    SOURCES="/etc/ /boot/ /home/rine/" 
+    TARGET="/media/e/archbackup/"
+    OPTIONS="--exclude-from=/home/rine/documents/scripts/exclude.list"
+
+    ### Don't edit below ###
+
+    LASTBACKUP=`ls -d $TARGET* | sort -r | head -1`  
+    TODAY=`date +%y%m%d`
+
+    if [ "$LASTBACKUP" == "$TARGET$TODAY" ]; then
+    echo "Backup for today is done, if there were errors, delete $TARGET$TODAY first"
+    exit 1
+    fi
+
+    for src in $SOURCES
+    do
+    if [ "$LASTBACKUP" ]; then
+    LD="--link-dest=$LASTBACKUP$src"
+    fi
+
+    mkdir -p $TARGET$TODAY$src
+    rsync -auv $OPTIONS $LD $src $TARGET$TODAY$src
+    done
+
+    When you want to exclude files, it's important to start them with a slash in exclude.list. If, for example, you want to exclude your "movies" directory, you type /movies. Otherwise, if you happened to have a file called movies somewhere else, it also would get excluded. Example exclude.list:
+
+    /.adobe
+    /.alsaplayer
+    /.cache
+    /.dbus
+    /.fontconfig
+    /.gstreamer-0.10
+    /.java
+    /.local
+    /.macromedia
+    /.mcop
+    /.mozilla
+    /.openoffice.org2
+    /.qt
+    /.quodlibet
+    /.session
+    /.texlive
+    /.texmf-var
+    /.thumbnails
+    /.xine
+    /serien
+    /tmp
+
+** IMAGES
+*** Imagemagick gif
+convert -delay 100 -loop 5 -dispose previous start.png end.png iamanimating.gif
+convert -delay 100 -loop 5 -dispose previous *.bmp iamanimating.gif
+convert -delay 1 -loop 0 -dispose previous *.bmp glitch.gif
+
+*** Convert images with imagemagick
+for image in *.png ;  do convert "$image" "${image%.*}.jpg" ; done
+
+#in parallel:
+find . -name '*jpeg' | parallel convert {} {.}.png
+
+*** Generate thumbnails
+for file in *.jpg;  do convert -thumbnail 100x100 "$file" thumb/"$file"_thumb.gif; done
+
+mogrify -format gif -path sthumb -thumbnail 100x100 SYNTH/**/*.jpg
+
+
+mogrify -format gif -path sthumb -define jpeg:size=200x200 -thumbnail 100x100 SYNTH/**/*.jpg
+
+#place the script in your desired base directory
+mkdir thumb
+mogrify -format gif -path thumb -define jpeg:size=200x200 -thumbnail 100x100^ -gravity center -extent 100x100 **/*.jpg
+
+for file in **/*.jpg; do echo $file; done 
+
+for file in **/*.jpg; do echo "<a href=\"$file\"><img src=\"thumb/$file\" /> </a>" ; done 
+*** Image gallery generator
+# Generates an html gallery with thumbnails from scanning recursively from the current working directory
+# Ekkoflok 2021
+# Enable globstar
+# Check it first with
+# shopt globstar
+# Then enable:
+shopt -s globstar
+shopt -s extglob #enable extended globbing
+
+mkdir thumb #thumbnail directory
+
+# do the magic
+# centered thumbnail
+
+find .jp?(e)g
+find ./ -iname '*.jp*g' | parallel mogrify -format gif -path thumb -define jpeg:size=300x300 -thumbnail 100x100^ -gravity center -extent 100x100 {}
+find ./ ?(*.jpg|*.jpeg|*.JPG|*.JPEG|*.png|*.bmp) |  parallel mogrify -format gif -path thumb -define jpeg:size=300x300 -thumbnail 100x100^ -gravity center -extent 100x100 {}
+
+mogrify -format gif -path thumb -define jpeg:size=300x300 -thumbnail 100x100^ -gravity center -extent 100x100 **/*.jpg
+# this one is not centered
+#mogrify -format gif -path thumb -define jpeg:size=200x200 -thumbnail 100x100 **/*.jpg
+
+#generate the gallery
+# "$(basename "${file%.*}").gif" strips the path and extension and adds the .gif extension
+# old # for file in **/*.jpg; do echo "<a href=\"$file\"><img src=\"thumb/"$(basename "${file%.*}").gif"\" /> </a>" >> gallery.html ; done
+find ./ -name '*jpg' | sed s:./:: | parallel echo '\<a href="\"{}\""\>\<img src="\"thumb/"{/.}".gif\"" /\> \</a\>' >> gallery.html
+
+ 
+*** Recursively resize images
+#+BEGIN_SRC 
+#!/bin/bash
+for file in *.jpg **/*.jpg
+do
+convert -resize 20% -quality 50% "${file}" "${file}"
+done
+#+END_SRC
+
+*** Same using find
+    find ./ -name "*.jpg" -exec echo mogrify -resize 800 {} \;
+*** Find .jpg or .jpeg files
+    #enable extended globbing:
+    shopt -s extglob #then:
+    find *.jp?(e)g
+*** Find multiple file types
+    shopt -s extglob #turn extended globbing on
+    ls ?(*.jpg|*.mp4)
+    
+*** Find everything except something:
+   find **/!(*.jpeg) 
+*** or one of something   
+    find **/*+(.bmp|.zip)
+
+*** Compose video from stills
+ffmpeg -f image2 -pattern_type glob -framerate 12 -i 'foo-*.jpeg' -s WxH foo.avi
+*** Extract images from video
+ffmpeg -i cymatic_in_water_01.mp4 -r 5 foo-%03d.bmp //5 frames per second
+
+** SOUND
+*** Convert wav to flac, highest compression lvl. 0 max, 8 min
+    #+BEGIN_SRC 
+
+    #!/bin/bash
+    for file in *.wav 
+    do
+        flac -0 "${file}"
+    done
+    
+    #+END_SRC
+    
+*** Convert wav to mp3 (or other formats)
+    //ensure lame is installed (pacman -S lame) , then:
+    sox in-file.wav out-file.mp3
+*** Normalize audio with sox
+    sox --norm=-0.5 infile outfile
+
+** FFMPEG
+***  X11 grabbing
+       Grab the X11 display with ffmpeg via
+       ffmpeg -f x11grab -video_size cif -framerate 25 -i :0.0 /tmp/out.mpg
+** SED
+*** Append first line
+    cat ekkoflok01cat.jpg | sed "1 s|$|hej|" > ekkoflok02cat.jpg
+*** Remove last n letters of line 
+ sed '1 s/...$//'
+Where 1 is the line number and the dots the number of chars before the last
+*** Search replace globally
+    sed 's/A/B/g'
+ 
+** GLITCH
+*** Glitch every bmp in folder
+for file in *.bmp; do sox -t ul -c 1 -r 48k "${file}" -t ul glitch_"${file}" trim 0 100s : echo 0.7 0.7 $((RANDOM % 1000)) 0.$RANDOM; done
+*** Glitch with SED
+    cat ekkoflok01cat.jpg | sed '2iekkoflxxok'| sed 's/A/A/g' > ekkoflokscript.jpg
+    while true; do cat ekkoflok01cat.jpg | sed 's/A/'$((RANDOM))'/g' > ekkoflokscript.jpg; sleep 0.1; done
+    while true; do cat untouched.jpg | sed 's/'$(printf \\$(printf %03o $((RANDOM % 200 + 30))))'/'$((RANDOM))'/g' > glitch.jpg; sleep 0.1; done
+
+** Zip directory recursively
+   zip -r outfile.zip directory
+* SBCL
+*** Run scripts
+**** sbcl --script prog.lisp ;; easiest way for one-off scripts
+**** sbcl --load myprog.asd --eval '(require :mypackage)' --eval '(mypackage:main)'
+**** sbcl --load "your cl file"
+**** https://lispcookbook.github.io/cl-cookbook/scripting.html
+**** rlwrap sbcl ;; Readlinewrap making it easier to work with lisp in terminal
+*** Read file as lisp forms #+begin_src lisp
+(uiop:read-file-form "questions-database.lisp")
+#+end_src
+* Arduino
+*** Permission denied
+    sudo chmod a+rw /dev/ttyACM0
+
+* Python
+** One-line server #+begin_src
+python -m http.server 8080
+
+#+end_src
+* Emacs
+** Delete horizontal whitespace   
+*** M-Space (just-one-space)
+*** M- \ or M-x delete-horizontal-space
+    https://emacs.stackexchange.com/questions/45124/emacs-command-to-remove-spaces-until-next-parens
+
+* SSH
+** Log in
+   ssh user@host.
+**   Copy file to server via SSH:
+*** Using SCP:
+    scp test.html user@host:/path/to/dir
+*** Using rsync
+    rsync -e "ssh" -avz pragmalin@debianvm:/home/pragmalin/wordpress-5.4.2.tar.gz /home/pragmalin/Downloads
+** Copy directory
+   scp * pragmalin@debianvm:/home/pragmalin
+
+   rsync -e "ssh" -avz --no-recursive * pragmalin@debianvm:/home/pragmalin
+
+** Recursively
+   scp -r * pragmalin@debianvm:/home/pragmalin
+
+   rsync -e "ssh" -avz * pragmalin@debianvm:/home/pragmalin
+
+   ***
+** Download files recursively
+     scp -r user@host.dk:/home/123/ekkoflok.dk/notes/ ./
+* CSS
+** Cut off exceeding text
+    text-overflow: ellipsis; //alternatively "clip"
+    white-space: nowrap;
+    overflow: hidden; 
+** Break text exceeding borders:
+    overflow-wrap: break-word;
+* Android hacking
+*** Enable adb remotely
+
+su
+setprop service.adb.tcp.port 5555
+stop adbd
+start adbd
