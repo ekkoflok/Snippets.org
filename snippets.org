@@ -213,7 +213,6 @@ mogrify -format gif -path thumb -define jpeg:size=300x300 -thumbnail 100x100^ -g
 # old # for file in **/*.jpg; do echo "<a href=\"$file\"><img src=\"thumb/"$(basename "${file%.*}").gif"\" /> </a>" >> gallery.html ; done
 find ./ -name '*jpg' | sed s:./:: | parallel echo '\<a href="\"{}\""\>\<img src="\"thumb/"{/.}".gif\"" /\> \</a\>' >> gallery.html
 
- 
 *** Recursively resize images
 #+BEGIN_SRC 
 #!/bin/bash
@@ -261,6 +260,13 @@ ffmpeg -i cymatic_in_water_01.mp4 -r 5 foo-%03d.bmp //5 frames per second
 *** Normalize audio with sox
     sox --norm=-0.5 infile outfile
 
+*** Strip silence from both ends
+    sox HOC-676.WAV_mono.wav kick_stripped.wav silence 1 0.1 0.1% reverse silence 1 0.1 0.1% reverse
+
+*** Split audio file with ffmpeg
+    ffmpeg -i input.WAV -map_channel 0.0.0 left.wav -map_channel 0.0.1 right.wav
+*** Split all files in directory to first mono channel    
+    for i in *.WAV; do echo ffmpeg -i $i -map_channel 0.0.0 $i_mono.wav; done
 ** FFMPEG
 ***  X11 grabbing
        Grab the X11 display with ffmpeg via
@@ -284,7 +290,17 @@ for file in *.bmp; do sox -t ul -c 1 -r 48k "${file}" -t ul glitch_"${file}" tri
 
 ** Zip directory recursively
    zip -r outfile.zip directory
+** Zip all .wav files in current dir
+   zip -r outfile *.wav
+** Grep
+*** Grep docx files in directory recursively
+    for i in *.docx */**.docx; do docx2txt < $i | grep -iA3 "text"; done
+* FFMPEG
+** Video made of one picture with music:
+*** ffmpeg -i ep1.png -i ep1.wav ep1.flv
 * SBCL
+*** Capture output of shell command as a string
+    (with-output-to-string (str) (uiop:run-program "ls" :output str))
 *** Run scripts
 **** sbcl --script prog.lisp ;; easiest way for one-off scripts
 **** sbcl --load myprog.asd --eval '(require :mypackage)' --eval '(mypackage:main)'
@@ -330,6 +346,9 @@ python -m http.server 8080
    ***
 ** Download files recursively
      scp -r user@host.dk:/home/123/ekkoflok.dk/notes/ ./
+* WGET
+** Download all files in directory
+   wget --mirror --no-parent <URL>
 * CSS
 ** Cut off exceeding text
     text-overflow: ellipsis; //alternatively "clip"
@@ -344,3 +363,8 @@ su
 setprop service.adb.tcp.port 5555
 stop adbd
 start adbd
+* USBDEMUX
+*** Troubleshooting 
+    Problem: ERROR: Unable to retrieve device list!  
+    Solution: sudo systemctl restart usbmuxd
+  
