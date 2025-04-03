@@ -8,11 +8,12 @@ _**Code snippets in various programming languages**_
 mogrify -format png *.svg
 
 *** Compress JPEGS without visible loss
-//This compresses a jpg with no visible loss of quality. Add in your own file names for target.jpg and result.jpg
-convert -strip -interlace Plane -sampling-factor 4:2:0 -quality 85% target.jpg result.jpg
+//This compresses a jpg with no visible loss of quality. 
+Add in your own file names for target.jpg and result.jpg
+**** convert -strip -interlace Plane -sampling-factor 4:2:0 -quality 85% target.jpg result.jpg
 
 // This does the same as above but to an entire folder (will overwrite original files):
-mogrify -strip -interlace Plane -sampling-factor 4:2:0 -quality 85% *.jpg
+**** mogrify -strip -interlace Plane -sampling-factor 4:2:0 -quality 85% *.jpg
 
 ***  Number to ASCII
     echo "Tal som ASCII: "$(printf \\$(printf '%03o' $((RANDOM % 255))))
